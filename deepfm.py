@@ -13,12 +13,14 @@ from deepctr_torch.models.deepfm import *
 from config import *
 import time
 
-if __name__ == "__main__":
-    submit = pd.read_csv(ROOT_PATH + '/test_data.csv')[['userid', 'feedid']]
+from evaluation import uAUC,compute_weighted_score
 
+if __name__ == "__main__":
+    submit = pd.read_csv(FEATURE_PATH + '/test_data.csv')[['userid', 'feedid']]
+    eval_dict = {}
     for action in ACTION_LIST:
         USE_FEAT = ['userid', 'feedid', action] + FEA_FEED_LIST[1:]
-        train = pd.read_csv(ROOT_PATH + f'/train_data_for_{action}.csv')[USE_FEAT]
+        train = pd.read_csv(FEATURE_PATH + f'/train_data_for_{action}.csv')[USE_FEAT]
 
         # shuffle..
         train = train.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -27,7 +29,7 @@ if __name__ == "__main__":
         print("posi prop:")
         print(sum((train[action] == 1) * 1) / train.shape[0])
 
-        test = pd.read_csv(ROOT_PATH + '/test_data.csv')[[i for i in USE_FEAT if i != action]]
+        test = pd.read_csv(FEATURE_PATH + '/test_data.csv')[[i for i in USE_FEAT if i != action]]
         target = [action]
         test[target[0]] = 0
         test = test[USE_FEAT]
@@ -70,17 +72,28 @@ if __name__ == "__main__":
 
         model = DeepFM(linear_feature_columns=linear_feature_columns, dnn_feature_columns=dnn_feature_columns,
                        task='binary',
-                       l2_reg_embedding=1e-1, device=device, gpus=[0, 1, 2, 3])
+                       l2_reg_embedding=1e-1, device=device)
 
         model.compile("adagrad", "binary_crossentropy", metrics=["binary_crossentropy", "auc"], )
-        model.fit(train_model_input, train[target].values, batch_size=512, epochs=5, verbose=1, validation_split=0.2)
+        model.fit(train_model_input, train[target].values, batch_size=512, epochs=1, verbose=1, validation_split=0.1)
 
-        # evaluation
+        # eval_dict
+        pred = model.predict(train_model_input, batch_size=512)
+        labels = train[target].values
+        userid_list = train.userid.astype(str).tolist()
+        uauc = uAUC(labels.flatten(), pred.flatten(), userid_list)
 
-        # test
+        eval_dict[action] = uauc
+        print(f"{action} uAUC: ", uauc)
+
+
+        # predict
         pred_ans = model.predict(test_model_input, batch_size=128)
         submit[action] = pred_ans
         torch.save(model, f'{MODEL_PATH}/DeepFM_model_{action}.h5')
         torch.cuda.empty_cache()
+
+    weight_auc = compute_weighted_score(eval_dict)
+    print("Weighted uAUC: ", weight_auc)
     # 保存提交文件
     submit.to_csv(f'{SUBMIT_PATH}/DeepFM_submit_{time.time()}.csv', index=False)

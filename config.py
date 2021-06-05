@@ -10,17 +10,17 @@
 ROOT_PATH = "/root/WeChatBigData/data"
 
 # 比赛数据集路径
-DATASET_PATH = ROOT_PATH + "wechat_algo_data1"
+DATASET_PATH = ROOT_PATH + "/wechat_algo_data1"
 # 训练集
-USER_ACTION = DATASET_PATH + "user_action.csv"
-FEED_INFO = DATASET_PATH + "feed_info.csv"
-FEED_EMBEDDINGS = DATASET_PATH + "feed_embeddings.csv"
+USER_ACTION = DATASET_PATH + "/user_action.csv"
+FEED_INFO = DATASET_PATH + "/feed_info.csv"
+FEED_EMBEDDINGS = DATASET_PATH + "/feed_embeddings.csv"
 # 测试集
-TEST_FILE = DATASET_PATH + "test_a.csv"
+TEST_FILE = DATASET_PATH + "/test_a.csv"
 
-FEATURE_PATH = ROOT_PATH + "feature"
-MODEL_PATH = ROOT_PATH + "model"
-SUBMIT_PATH = ROOT_PATH + "submit"
+FEATURE_PATH = ROOT_PATH + "/feature"
+MODEL_PATH = ROOT_PATH + "/model"
+SUBMIT_PATH = ROOT_PATH + "/submit"
 
 END_DAY = 15
 SEED = 2021

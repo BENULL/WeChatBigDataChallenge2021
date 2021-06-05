@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import time
 import traceback
 from collections import defaultdict
-
-import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.stats import rankdata
+from sklearn.metrics import roc_auc_score
 
-import logging
-
-LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-logger = logging.getLogger(__file__)
+WEIGHTS_MAP = {
+    "read_comment": 4.0,  # 是否查看评论
+    "like": 3.0,  # 是否点赞
+    "click_avatar": 2.0,  # 是否点击头像
+    "forward": 1.0,  # 是否转发
+    "favorite": 1.0,  # 是否收藏
+    "comment": 1.0,  # 是否发表评论
+    "follow": 1.0  # 是否关注
+}
 
 
 @njit
@@ -32,8 +34,8 @@ def fast_auc(actual, predicted):
 
 def uAUC(labels, preds, user_id_list):
     """Calculate user AUC"""
-    user_pred = defaultdict(list)
-    user_truth = defaultdict(list)
+    user_pred = defaultdict(lambda: [])
+    user_truth = defaultdict(lambda: [])
     for idx, truth in enumerate(labels):
         user_id = user_id_list[idx]
         pred = preds[idx]
@@ -56,6 +58,7 @@ def uAUC(labels, preds, user_id_list):
     size = 0.0
     for user_id in user_flag:
         if user_flag[user_id]:
+            # auc = roc_auc_score(np.asarray(user_truth[user_id]), np.asarray(user_pred[user_id]))
             auc = fast_auc(np.asarray(user_truth[user_id]), np.asarray(user_pred[user_id]))
             total_auc += auc
             size += 1.0
@@ -63,7 +66,7 @@ def uAUC(labels, preds, user_id_list):
     return user_auc
 
 
-def compute_weighted_score(score_dict, weight_dict):
+def compute_weighted_score(score_dict, weight_dict=None):
     """基于多个行为的uAUC值，计算加权uAUC
     Input:
         scores_dict: 多个行为的uAUC值映射字典, dict
@@ -71,6 +74,7 @@ def compute_weighted_score(score_dict, weight_dict):
     Output:
         score: 加权uAUC值, float
     """
+    weight_dict = weight_dict or WEIGHTS_MAP
     score = 0.0
     weight_sum = 0.0
     for action in score_dict:
@@ -197,8 +201,17 @@ def score(result_data, label_data, mode="初赛"):
 
 
 if __name__ == '__main__':
-    t = time.time()
-    label_data = open('data/evaluate/evaluate_all_13_generate_sample.csv', 'r')
-    result_data = open('data/evaluate/submit_1619332123.csv', 'r')
-    res = score(result_data, label_data, mode='初赛')
-    print('Time cost: %.2f s' % (time.time() - t))
+    # t = time.time()
+    # label_data = open('data/evaluate/evaluate_all_13_generate_sample.csv', 'r')
+    # result_data = open('data/evaluate/submit_1619332123.csv', 'r')
+    # res = score(result_data, label_data, mode='初赛')
+    # print('Time cost: %.2f s' % (time.time() - t))
+
+    import numpy as np
+    y_true = np.array([1, 1, 0, 0, 1, 1, 0])
+    y_scores = np.array([0.8, 0.7, 0.5, 0.5, 0.5, 0.5, 0.3])
+
+
+    print(roc_auc_score(y_true, y_scores))
+    print(fast_auc(y_true, y_scores))
+

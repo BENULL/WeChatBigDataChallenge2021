@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from config import *
+import os
 
 def create_dir():
     """
@@ -53,7 +54,7 @@ def make_sample():
     train = pd.merge(user_action_df, feed_info_df[FEA_FEED_LIST], on='feedid', how='left')
     test = pd.merge(test, feed_info_df[FEA_FEED_LIST], on='feedid', how='left')
     test["videoplayseconds"] = np.log(test["videoplayseconds"] + 1.0)
-    test.to_csv(FEATURE_PATH + f'/test_data.csv', index=False)
+    test.to_csv(f'{FEATURE_PATH}/test_data.csv', index=False)
 
     # TODO 对数据添加统计特征 1.生成统计特征文件 2. dataloader 中增强数据
     for action in tqdm(ACTION_LIST):
@@ -64,7 +65,7 @@ def make_sample():
         df_neg = df_neg.sample(frac=ACTION_SAMPLE_RATE[action], random_state=SEED, replace=False)
         df_all = pd.concat([df_neg, tmp[tmp[action] == 1]])
         df_all["videoplayseconds"] = np.log(df_all["videoplayseconds"] + 1.0)
-        df_all.to_csv(FEATURE_PATH + f'/train_data_for_{action}.csv', index=False)
+        df_all.to_csv(f'{FEATURE_PATH}/train_data_for_{action}.csv', index=False)
 
 def main():
     t = time.time()
