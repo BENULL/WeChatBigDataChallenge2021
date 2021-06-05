@@ -44,7 +44,8 @@ BEFORE_DAY = 5
 FEA_COLUMN_LIST = ["read_comment", "like", "click_avatar", "forward", "comment", "follow", "favorite"]
 
 # FEED 特征
-FEA_FEED_LIST = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id', 'bgm_singer_id']
+FEA_FEED_LIST = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id', 'bgm_singer_id', 'feed_stay_avg', 'feed_play_avg', 'feed_tags', ]
 
 # TODO USER nounique 可以尝试
-# FEA_USER_LIST = []
+FEA_USER_LIST = ['userid', 'user_stay_avg', 'user_play_avg', 'user_like_sum', 'user_read_comments_sum', "click_avatar_sum",\
+             "user_forward_sum", "user_comment_sum", "user_follow_sum", "user_favorite_sum", "user_fav_tags"]
