@@ -7,29 +7,31 @@
 """
 import argparse
 from config import *
-import logging
-
-LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
-logger = logging.getLogger(__file__)
-
 
 
 def train(self, model):
+    """
+    在过去13天数据上训练
+    """
     pass
 
 
 def evaluate(self):
+    """
+    过去13天训练的模型预测第14天
+    """
     pass
 
 
 def predict(self):
+    """
+    过去14天训练的模型预测第15天
+    """
     pass
 
 
 if __name__ == '__main__':
-    logger.info("123")
-
+    pass
     # TODO 参数化
     # parser = argparse.ArgumentParser()
     # opt = parser.parse_args()

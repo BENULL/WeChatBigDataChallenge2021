@@ -6,7 +6,12 @@ from collections import defaultdict
 import pandas as pd
 from numba import njit
 from scipy.stats import rankdata
-from sklearn.metrics import roc_auc_score
+import numpy as np
+import time
+import logging
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+logger = logging.getLogger(__file__)
 
 WEIGHTS_MAP = {
     "read_comment": 4.0,  # 是否查看评论
@@ -201,17 +206,12 @@ def score(result_data, label_data, mode="初赛"):
 
 
 if __name__ == '__main__':
-    # t = time.time()
-    # label_data = open('data/evaluate/evaluate_all_13_generate_sample.csv', 'r')
-    # result_data = open('data/evaluate/submit_1619332123.csv', 'r')
-    # res = score(result_data, label_data, mode='初赛')
-    # print('Time cost: %.2f s' % (time.time() - t))
 
-    import numpy as np
-    y_true = np.array([1, 1, 0, 0, 1, 1, 0])
-    y_scores = np.array([0.8, 0.7, 0.5, 0.5, 0.5, 0.5, 0.3])
+    t = time.time()
+    label_data = open('./data/evaluate/evaluate_all_13_concate_sample.csv', 'r')
+    result_data = open('./data/submit/WIPE_submit_1623052820.csv', 'r')
+    res = score(result_data, label_data, mode='初赛')
+    print('Time cost: %.2f s' % (time.time() - t))
 
 
-    print(roc_auc_score(y_true, y_scores))
-    print(fast_auc(y_true, y_scores))
 

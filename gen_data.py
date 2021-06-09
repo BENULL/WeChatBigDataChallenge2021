@@ -37,26 +37,75 @@ def check_file():
             flag = False
     return flag, not_exist_file
 
-def statis_feature(start_day=1, before_day=5, agg=['mean', 'sum', 'count']):
+def process_embed(train):
     """
-    统计特征
+    处理feed_embed
     """
-    # TODO 统计特征
+    # TODO 处理feed_embed 怎么使用？
+    feed_embed_array = np.zeros((train.shape[0], 512))
+    for i in tqdm(range(train.shape[0])):
+        x = train.loc[i, 'feed_embedding']
+        if x != np.nan and x != '':
+            y = [float(i) for i in str(x).strip().split(" ")]
+        else:
+            y = np.zeros((512,)).tolist()
+        feed_embed_array[i] += y
+    temp = pd.DataFrame(columns=[f"embed{i}" for i in range(512)], data=feed_embed_array)
+    train = pd.concat((train, temp), axis=1)
+    return train
+
+def statis_feature(start_day=1, before_day=7, agg='sum'):
+    """
+    统计用户/feed 过去n天各类行为的次数
+    :param start_day: Int. 起始日期
+    :param before_day: Int. 时间范围（天数）
+    :param agg: String. 统计方法
+    """
+    history_data = pd.read_csv(USER_ACTION)[["userid", "date_", "feedid"] + FEA_COLUMN_LIST]
+    history_data.sort_values(by="date_", inplace=True)
+    for dim in ["userid", "feedid"]:
+        user_data = history_data[[dim, "date_"] + FEA_COLUMN_LIST]
+        res_arr = []
+        tmp_name = '_' + dim + '_'
+        for start in range(2, before_day + 1):
+            temp = user_data[user_data['date_'] <= start]
+            temp = temp.drop(columns=['date_'])
+            temp = temp.groupby([dim]).agg(agg).reset_index()
+            temp.columns = [dim] + list(map(tmp_name.join, temp.columns.values[1:]))
+            temp['date_'] = start
+            res_arr.append(temp)
+
+        for start in range(start_day, END_DAY-before_day+1):
+            temp = user_data[((user_data["date_"]) >= start) & (user_data["date_"] < (start + before_day))]
+            temp = temp.drop(columns=['date_'])
+            temp = temp.groupby([dim]).agg([agg]).reset_index()
+            temp.columns = list(map(''.join, temp.columns.values))
+            temp["date_"] = start + before_day
+            res_arr.append(temp)
+
+        dim_feature = pd.concat(res_arr)
+        feature_path = os.path.join(feature_dir, dim+"_feature.csv")
+        dim_feature.to_csv(f'{FEATURE_PATH}/{dim}_feature.csv', index=False)
+        print(f'Saved {FEATURE_PATH}/{dim}_feature.csv')
+
+def merge_feature():
     pass
 
 def make_sample():
     feed_info_df = pd.read_csv(FEED_INFO)
-    # 用户行为 除去播放、停留时间
+    # user action
     user_action_df = pd.read_csv(USER_ACTION)[["userid", "date_", "feedid"] + FEA_COLUMN_LIST]
     feed_embed = pd.read_csv(FEED_EMBEDDINGS)
+
     test = pd.read_csv(TEST_FILE)
+
     # add feed feature
     train = pd.merge(user_action_df, feed_info_df[FEA_FEED_LIST], on='feedid', how='left')
     test = pd.merge(test, feed_info_df[FEA_FEED_LIST], on='feedid', how='left')
     test["videoplayseconds"] = np.log(test["videoplayseconds"] + 1.0)
     test.to_csv(f'{FEATURE_PATH}/test_data.csv', index=False)
 
-    # TODO 对数据添加统计特征 1.生成统计特征文件 2. dataloader 中增强数据
+    # TODO 对数据添加统计特征 1.生成统计特征文件
     for action in tqdm(ACTION_LIST):
         print(f"prepare data for {action}")
         tmp = train.drop_duplicates(['userid', 'feedid', action], keep='last')
@@ -67,6 +116,12 @@ def make_sample():
         df_all["videoplayseconds"] = np.log(df_all["videoplayseconds"] + 1.0)
         df_all.to_csv(f'{FEATURE_PATH}/train_data_for_{action}.csv', index=False)
 
+def make_evaluate():
+    pass
+
+def make_submit():
+    pass
+
 def main():
     t = time.time()
     create_dir()
@@ -76,6 +131,8 @@ def main():
         return
     # statis_feature(start_day=1, before_day=BEFOR_DAY, agg=['mean','sum','count'])
     make_sample()
+    make_evaluate()
+    make_submit()
     print('Time cost: %.2f s' % (time.time() - t))
 
 

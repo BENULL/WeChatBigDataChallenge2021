@@ -16,11 +16,12 @@ USER_ACTION = DATASET_PATH + "/user_action.csv"
 FEED_INFO = DATASET_PATH + "/feed_info.csv"
 FEED_EMBEDDINGS = DATASET_PATH + "/feed_embeddings.csv"
 # 测试集
-TEST_FILE = DATASET_PATH + "/test_a.csv"
+SUBMIT_FILE = DATASET_PATH + "/test_a.csv"
 
 FEATURE_PATH = ROOT_PATH + "/feature"
 MODEL_PATH = ROOT_PATH + "/model"
 SUBMIT_PATH = ROOT_PATH + "/submit"
+EVALUATE_PATH = ROOT_PATH + "/evaluate"
 
 END_DAY = 15
 SEED = 2021
@@ -35,7 +36,7 @@ ACTION_SAMPLE_RATE = {"read_comment": 0.2, "like": 0.2, "click_avatar": 0.2, "fo
                       "comment": 0.2, "follow": 0.2, "favorite": 0.2}
 
 # 各个阶段数据集的设置的最后一天
-# STAGE_END_DAY = {"online_train": 14, "offline_train": 12, "evaluate": 13, "submit": 15}
+STAGE_END_DAY = {"train": 13, "evaluate": 14, "submit": 14}
 
 # 构造训练数据的天数
 BEFORE_DAY = 5
@@ -44,8 +45,12 @@ BEFORE_DAY = 5
 FEA_COLUMN_LIST = ["read_comment", "like", "click_avatar", "forward", "comment", "follow", "favorite"]
 
 # FEED 特征
-FEA_FEED_LIST = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id', 'bgm_singer_id', 'feed_stay_avg', 'feed_play_avg', 'feed_tags', ]
+FEA_FEED_LIST = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id', 'bgm_singer_id', 'feed_stay_avg',
+                 'feed_play_avg', 'feed_like_sum', 'feed_read_comments_sum',
+                 'feed_click_avatar_sum', 'feed_forward_sum', 'feed_comment_sum', 'feed_follow_sum',
+                 'feed_favorite_sum', 'feed_tags']
 
 # TODO USER nounique 可以尝试
-FEA_USER_LIST = ['userid', 'user_stay_avg', 'user_play_avg', 'user_like_sum', 'user_read_comments_sum', "click_avatar_sum",\
-             "user_forward_sum", "user_comment_sum", "user_follow_sum", "user_favorite_sum", "user_fav_tags"]
+FEA_USER_LIST = ['userid', 'user_stay_avg', 'user_play_avg', 'user_like_sum', 'user_read_comments_sum',
+                 'user_click_avatar_sum', 'user_forward_sum', 'user_comment_sum', 'user_follow_sum',
+                 'user_favorite_sum', 'user_tags']
