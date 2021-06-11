@@ -37,6 +37,238 @@ def check_file():
             flag = False
     return flag, not_exist_file
 
+def loadFile():
+    user_action_data = pd.read_csv(USER_ACTION)[USER_ACTION_COLUMNS]
+    print("user action data description:\n ", user_action_data.describe())
+    print("user action data:\n ", user_action_data)
+    print("the number of users: ", len(user_action_data["userid"].unique()))
+    print("the number of user interact feeds: ", len(user_action_data["feedid"].unique()))
+
+    feed_data = pd.read_csv(FEED_INFO)[FEED_INFO_COLUMNS]
+    print("feed data description:\n ", feed_data.describe())
+    print("the number of feeds: ", feed_data["feedid"].count())
+    print("the number of authorids: ", feed_data["authorid"].count())
+
+    return user_action_data, feed_data
+
+def user_statistics_feats(userdataDF):
+    """
+    用户统计特征提取
+    """
+    user_static = userdataDF
+    user_static = user_static.groupby('userid', as_index=False).agg(
+        # 用户过去一段时间的行为总数
+        user_action_cnt=('feedid', 'count'),
+        # 用户观看的不同feed的数量
+        user_feed_cnt=("feedid", lambda x: x.nunique()),
+        # 用户的观看以及停留平均时长
+        user_play_avg=('play', 'mean'),
+        user_stay_avg=('stay', 'mean'),
+        # 用户过去一段时间的各种行为的总数
+        user_read_comment_sum=('read_comment', 'sum'),
+        user_comment_sum=('comment', 'sum'),
+        user_like_sum=('like', 'sum'),
+        user_click_avatar_sum=('click_avatar', 'sum'),
+        user_forward_sum=("forward", 'sum'),
+        user_follow_sum=("follow", 'sum'),
+        user_favorite_sum=("favorite", 'sum'),
+        # 用户过去一段时间的各种行为的平均次数
+        user_read_comment_avg=('read_comment', 'mean'),
+        user_comment_avg=('comment', 'mean'),
+        user_like_avg=('like', 'mean'),
+        user_click_avatar_avg=('click_avatar', 'mean'),
+        user_forward_avg=("forward", 'mean'),
+        user_follow_avg=("follow", 'mean'),
+        user_favorite_avg=("favorite", 'mean'))
+    print(user_static)
+    return user_static
+
+def feed_statistics_feat(userDataDF, feedDataDF):
+    """
+    处理feed统计特征
+    """
+    feed_static = userDataDF
+    print(feed_static.columns.values)
+
+    feed_static = feed_static.groupby('feedid', as_index=False).agg(
+        # 每个feed在过去一段时间内被看到的总数
+        feed_count=('userid', 'count'),
+        # 每个feed在过去一段时间内被多少个不同用户观看到过
+        feed_user_cnt=("userid", lambda x: x.nunique()),
+        # 每个feed被用户播放以及停留的平均时长
+        feed_play_avg=('play', 'mean'),
+        feed_stay_avg=('stay', 'mean'),
+        # 每个feed在过去一段时间的各种行为的总数
+        feed_read_comment_sum=('read_comment', 'sum'),
+        feed_comment_sum=('comment', 'sum'),
+        feed_like_sum=('like', 'sum'),
+        feed_click_avatar_sum=('click_avatar', 'sum'),
+        feed_forward_sum=("forward", 'sum'),
+        feed_follow_sum=("follow", 'sum'),
+        feed_favorite_sum=("favorite", 'sum'),
+        # 每个feed在过去一段时间的各种行为的平均次数
+        feed_read_comment_avg=('read_comment', 'mean'),
+        feed_comment_avg=('comment', 'mean'),
+        feed_like_avg=('like', 'mean'),
+        feed_click_avatar_avg=('click_avatar', 'mean'),
+        feed_forward_avg=("forward", 'mean'),
+        feed_follow_avg=("follow", 'mean'),
+        feed_favorite_avg=("favorite", 'mean'))
+    print(feed_static.columns.values)
+    print(feed_static)
+
+    feed_static = feed_static.merge(feedDataDF, how="left", on="feedid")
+
+    # 计算feed平均播放和停留时长占feed总时长的比例
+    def calcu(row):
+        play, total = row["feed_play_avg"], row["videoplayseconds"]
+        print(play, total)
+        return play / 1000 / total
+
+    feed_static["feed_play_rate"] = feed_static[["feed_play_avg", "videoplayseconds"]].apply(
+        lambda x: x["feed_play_avg"] / 1000 / x["videoplayseconds"], axis=1)
+    feed_static["feed_stay_rate"] = feed_static[["feed_stay_avg", "videoplayseconds"]].apply(
+        lambda x: x["feed_stay_avg"] / 1000 / x["videoplayseconds"], axis=1)
+    print(feed_static.columns.values)
+    print(feed_static)
+
+def getLength(row, S):
+    for x in row:
+        S.add(x)
+
+def feed_keyword_process(feedDF):
+    """
+    处理feed的Keyword
+    """
+    def process_keywords(row):
+        """
+        合并手工标注的keyword和机器标注的keyword列
+        """
+        manual, machine = row['manual_keyword_list'], row['machine_keyword_list']
+        # print("row: ", manual, machine)
+        if manual and machine:
+            manual_list = list(map(int, manual.split(";")))
+            machine_list = list(map(int, machine.split(";")))
+            return list(set(manual_list + machine_list))
+        else:
+            if manual:
+                return list(map(int, manual.split(";")))
+            elif machine:
+                return list(map(int, machine.split(";")))
+            else:
+                return [FILL_NAN_KEYWORD_NUM]  # 默认关键字类型
+
+    feed_keyword = feedDF.loc[:, ["feedid", "manual_keyword_list", "machine_keyword_list"]]
+    feed_keyword['manual_keyword_list'].fillna(FILL_NAN_KEYWORD_STR, inplace=True)
+    feed_keyword['machine_keyword_list'].fillna(FILL_NAN_KEYWORD_STR, inplace=True)
+    feed_keyword["feed_keyword_list"] = feed_keyword.apply(process_keywords, axis=1) #逐行处理
+
+    #print(feed_keyword['feed_keyword_list'])
+    # 对所有keyword都加1
+    feed_keyword['feed_keyword_list'] = feed_keyword['feed_keyword_list'].apply(lambda row: list(map(lambda x: x+1, row)))
+    print(feed_keyword['feed_keyword_list'])
+
+    S = set()
+    feed_keyword['feed_keyword_list'].apply(lambda row: getLength(row, S))
+    print("the number of keywords: ", len(S))
+    print("the number of keywords embeddings: ", max(S)+1)
+    feed_keyword = feed_keyword[['feedid', 'feed_keyword_list']] # 筛选出keyword列表
+    print(feed_keyword)
+    return feed_keyword
+
+def feed_tag_process(feedDF):
+    """
+    处理feed的Tag
+    """
+    def process_tags(row):
+        """
+        合并手工标注的tag和机器标注的tag列
+        """
+        manual, machine = row['manual_tag_list'], row['machine_tag_list']
+        # print("row: ", manual, machine)
+        if manual and machine:
+            manual_list = list(map(int, manual.split(";")))
+            machine_list = list(filter(lambda x: float(x.split(" ")[1]) > MACHINE_TAG_THRESHOLD, machine.split(";")))
+            machine_list = list(map(lambda x: int(x.split()[0]), machine_list))
+            return list(set(manual_list + machine_list))
+        else:
+            if manual:
+                return list(map(int, manual.split(";")))
+            elif machine:
+                machine_list = list(
+                    filter(lambda x: float(x.split(" ")[1]) > MACHINE_TAG_THRESHOLD, machine.split(";")))
+                return list(map(lambda x: int(x.split()[0]), machine_list))
+            else:
+                return [FILL_NAN_TAG_NUM]  # 默认Tag类型
+
+    feed_tag = feedDF.loc[:, ["feedid", "manual_tag_list", "machine_tag_list"]]
+    feed_tag['manual_tag_list'].fillna(FILL_NAN_KEYWORD_STR, inplace=True)
+    feed_tag['machine_tag_list'].fillna(FILL_NAN_TAG_STR, inplace=True)
+    feed_tag['feed_tag_list'] = feed_tag.apply(process_tags, axis=1)  # 逐行处理
+
+    # print(feed_tag['feed_tag_list'])
+    # 对所有tag都加1
+    feed_tag['feed_tag_list'] = feed_tag['feed_tag_list'].apply(lambda row: list(map(lambda x: x + 1, row)))
+
+    S = set()
+    feed_tag['feed_tag_list'].apply(lambda row: getLength(row, S))
+    print("the number of tags embeddings: ", max(S) + 1)
+
+    feed_tag = feed_tag[['feedid', 'feed_tag_list']] # 筛选出tag列表
+    print(feed_tag)
+    return feed_tag
+
+def user_keyword_tag_process(userdataDF, feedkeywordDF, feedtagDF):
+    """
+    统计每个用户的keyword和tag列表
+    """
+    # 构造用户特征
+    userdataDF = userdataDF.loc[:, ["userid", "feedid", "read_comment", "comment", "like", "click_avatar", "forward", "follow", "favorite"]]
+    feedkwtagDF = feedkeywordDF.merge(feedtagDF, how="left", on="feedid")
+    print(feedkwtagDF)
+    feedkwtagDF.to_csv(FEATURE_PATH + "/feed_keyword_tag.csv", index=True)
+
+    userKeywordTagDF = userdataDF.merge(feedkwtagDF, how='left', on='feedid')
+    print(userKeywordTagDF)
+
+    # 筛选掉7种动作至少有一种不为0的用户行为
+    userKeywordTagDF = userKeywordTagDF[(userKeywordTagDF["read_comment"] != 0) | (userKeywordTagDF["comment"] != 0) | (userKeywordTagDF["like"] != 0) | (userKeywordTagDF["click_avatar"] != 0) |
+                                  (userKeywordTagDF["forward"] != 0) | (userKeywordTagDF["follow"] != 0) | (userKeywordTagDF["favorite"] != 0)]
+    print(userKeywordTagDF)
+
+    def userTagKeywordProcess(row, mode):
+        if mode == 'keyword':
+            return row['feed_keyword_list']
+        elif mode == 'tag':
+            return row['feed_tag_list']
+
+    userKeywordTagDF['user_tag_list'] = userKeywordTagDF.apply(lambda row: userTagKeywordProcess(row, 'tag'), axis=1)
+    userKeywordTagDF['user_keyword_list'] = userKeywordTagDF.apply(lambda row: userTagKeywordProcess(row, 'keyword'), axis=1)
+
+    def userTagKeywordCollect(row):
+        import operator
+        from functools import reduce
+        # print("row:\n ", row)
+        # print(row.tolist())
+        temp = reduce(operator.add, row.tolist())
+        return list(set(temp))
+        # return Counter(temp) # 不要去重,保存为字典形式
+
+    # 这样做的话，用户数不一定全，因为可能存在用户自始至终没有产生过任何反馈
+    userTagList = userKeywordTagDF.groupby(['userid'])["user_tag_list"].apply(lambda x: userTagKeywordCollect(x))
+    userKeywordList = userKeywordTagDF.groupby(['userid'])["user_keyword_list"].apply(lambda x: userTagKeywordCollect(x))
+    print(userTagList, userKeywordList)
+
+    alluserDF = userdataDF[['userid']].drop_duplicates()
+
+    userTagList = alluserDF.merge(userTagList, how="left", on="userid")
+    userTagList['user_tag_list'].fillna([], inplace=True)
+
+    userKeywordList = userTagList.merge(userKeywordList, how="left", on="userid")
+    userKeywordList['user_keyword_list'].fillna([], inplace=True)
+    userKeywordList.to_csv(FEATURE_PATH + "/user_keyword_tag.csv", index=True)
+    print(userKeywordList)
+
 def process_embed(train):
     """
     处理feed_embed
@@ -129,10 +361,27 @@ def main():
     if not flag:
         print("files not exist: ", ",".join(not_exists_file))
         return
+
+    userDataDF, feedDataDF = loadFile()
+
+    # user行为统计特征
+    userStaticDF = user_statistics_feats(userDataDF)
+
+    # feed统计特征
+    feedStaticDF = feed_statistics_feat(userDataDF, feedDataDF)
+
+    # feed 和 user 的tag和keyword
+    feedKeywordDF = feed_keyword_process(feedDataDF)
+    feedTagDF = feed_tag_process(feedDataDF)
+    user_keyword_tag_process(userDataDF, feedKeywordDF, feedTagDF)
+
+    totalFeats = userStaticDF.merge(feedStaticDF, how="left", on="feedid")
+    totalFeats.to_csv(FEATURE_PATH + "/user_feed_feats.csv")
+
     # statis_feature(start_day=1, before_day=BEFOR_DAY, agg=['mean','sum','count'])
-    make_sample()
-    make_evaluate()
-    make_submit()
+    # make_sample()
+    # make_evaluate()
+    # make_submit()
     print('Time cost: %.2f s' % (time.time() - t))
 
 
