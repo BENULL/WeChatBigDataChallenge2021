@@ -421,7 +421,7 @@ def make_evaluate(totalFeatDF):
     # 筛选出date为14天的数据，作为验证集
     evaluateDF = totalFeatDF[totalFeatDF['date_'] == END_DAY - 1]
 
-    filename = EVALUATE_PATH + "/evaluate_all_13.csv"
+    filename = EVALUATE_PATH + "/evaluate_all_14.csv"
     print('evaluate file save to: %s' % filename)
 
     evaluateDF.to_csv(filename)
