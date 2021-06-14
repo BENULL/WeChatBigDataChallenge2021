@@ -7,7 +7,7 @@
 """
 
 # 存储数据的根目录
-ROOT_PATH = "/Volumes/Study/RS/Projects/WeChatBigDataChallenge2021"
+ROOT_PATH = "/root/WeChatBigData/data/"
 
 # 比赛数据集路径
 DATASET_PATH = ROOT_PATH + "/wechat_algo_data1"
@@ -27,14 +27,18 @@ MODEL_PATH = ROOT_PATH + "/model"
 SUBMIT_PATH = ROOT_PATH + "/submit"
 EVALUATE_PATH = ROOT_PATH + "/evaluate"
 
-END_DAY = 15
-SEED = 2021
-
 # user action 列名
 USER_ACTION_COLUMNS = ["userid","feedid","date_","device","read_comment","comment","like","play","stay","click_avatar","forward","follow","favorite"]
 # feed info 列名
 FEED_INFO_COLUMNS = ["feedid","authorid","videoplayseconds","description","ocr","asr","bgm_song_id","bgm_singer_id","manual_keyword_list",\
                      "machine_keyword_list","manual_tag_list","machine_tag_list","description_char","ocr_char","asr_char"]
+# feed drop columns
+FEED_DROP_COLUMNS = ['description', 'ocr', 'asr', 'description_char', 'ocr_char', 'asr_char', 'manual_keyword_list', 'machine_keyword_list',
+                     'manual_tag_list', 'machine_tag_list']
+
+# test data 列名
+TEST_COLUMNS = ["userid","feedid","device"]
+
 # feed embedding 列名
 FEED_EMBEDDINGS_COLUMNS = ["feedid","feed_embedding"]
 
@@ -42,6 +46,9 @@ FEED_EMBEDDINGS_COLUMNS = ["feedid","feed_embedding"]
 ACTION_LIST = ["read_comment", "like", "click_avatar", "forward"]
 # 复赛待预测行为列表
 # ACTION_LIST = ["read_comment", "like", "click_avatar",  "forward", "comment", "follow", "favorite"]
+
+# 各个行为构造训练数据的天数
+ACTION_DAY_NUM = {"read_comment": 7, "like": 7, "click_avatar": 7, "forward": 7, "comment": 7, "follow": 7, "favorite": 7}
 
 # 负样本下采样比例((下采样后负样本数/原负样本数)) TODO 下采样参数测试
 ACTION_SAMPLE_RATE = {"read_comment": 0.2, "like": 0.2, "click_avatar": 0.2, "forward": 0.2,
@@ -77,13 +84,13 @@ FEA_COLUMN_LIST = ["read_comment", "like", "click_avatar", "forward", "comment",
 # FEED相关特征
 FEA_FEED_LIST = ['feedid', 'authorid',
                  'videoplayseconds',
-                 'feed_count', # 此feed在过去一段时间内被用户看到的总次数
+                 'feed_expo_cnt', # 此feed在过去一段时间内被曝光的总次数
                  'feed_user_cnt', # 此feed在过去一段时间内被不同用户看到的个数
                  'bgm_song_id', 'bgm_singer_id',
                  'feed_stay_avg', 'feed_play_avg', # feed被用户播放和停留的平均时长
                  'feed_play_rate', 'feed_stay_rate', # feed被用户播放和停留的平均时长占总时长的比例
                  'feed_like_sum', 'feed_read_comment_sum', 'feed_click_avatar_sum', 'feed_forward_sum', 'feed_comment_sum', 'feed_follow_sum', 'feed_favorite_sum',
-                 'feed_like_rate', 'feed_read_comment_rate', 'feed_click_avatar_rate', 'feed_forward_rate', 'feed_comment_rate', 'feed_follow_rate', 'feed_favorite_rate',
+                 'feed_like_avg', 'feed_read_comment_avg', 'feed_click_avatar_avg', 'feed_forward_avg', 'feed_comment_avg', 'feed_follow_avg', 'feed_favorite_avg',
                  'feed_tag_list', # 每个feed的tag列表
                  'feed_keyword_list' # 每个feed的keyword列表
                  ]
