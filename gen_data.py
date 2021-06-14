@@ -11,6 +11,8 @@ import pandas as pd
 from tqdm import tqdm
 from config import *
 import os
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import MultiLabelBinarizer
 
 def create_dir():
     """
@@ -269,22 +271,36 @@ def user_keyword_tag_process(userdataDF, feedkeywordDF, feedtagDF):
     userKeywordList.to_csv(FEATURE_PATH + "/user_keyword_tag.csv", index=True)
     print(userKeywordList)
 
-def process_embed(train):
+def process_embed(pca=True, n_component=32):
     """
     处理feed_embed
     """
-    # TODO 处理feed_embed 怎么使用？
-    feed_embed_array = np.zeros((train.shape[0], 512))
-    for i in tqdm(range(train.shape[0])):
-        x = train.loc[i, 'feed_embedding']
+    feed_embed = pd.read_csv(FEED_EMBEDDINGS)
+    feed_embed_array = np.zeros((feed_embed.shape[0], 512))
+    for i in tqdm(range(feed_embed.shape[0])):
+        x = feed_embed.loc[i, 'feed_embedding']
         if x != np.nan and x != '':
             y = [float(i) for i in str(x).strip().split(" ")]
         else:
             y = np.zeros((512,)).tolist()
         feed_embed_array[i] += y
-    temp = pd.DataFrame(columns=[f"embed{i}" for i in range(512)], data=feed_embed_array)
-    train = pd.concat((train, temp), axis=1)
-    return train
+    processed_feed_embed = pd.DataFrame(columns=[f"embed{i}" for i in range(512)], data=feed_embed_array)
+    processed_feed_embed = pd.concat((feed_embed.feedid,processed_feed_embed),axis=1)
+    # processed_feed_embed.to_csv(f'{FEATURE_PATH}/feed_embed.csv',index=False)
+    if pca:
+        feed_embed_pac(processed_feed_embed,n_component)
+
+def feed_embed_pac(feed_embed,n_components):
+    """
+    feed_embed pca
+    """
+    data = np.array(feed_embed.iloc[:,1:])
+    pca = PCA(n_components=n_components).fit(data)
+    data_pca = pca.transform(data)
+    pca_result = pd.DataFrame(data_pca, columns=[f'embed{i}' for i in range(pca.n_components_)])
+    pca_result = pd.concat((feed_embed.feedid, pca_result), axis=1)
+    pca_result.to_csv(f'{FEATURE_PATH}/feed_embed_pca_{pca.n_components_}.csv',index=False)
+
 
 def statis_feature(start_day=1, before_day=7, agg='sum'):
     """
@@ -354,6 +370,30 @@ def make_evaluate():
 def make_submit():
     pass
 
+def user_tags_encoding():
+    user_tags = pd.read_csv(f'{FEATURE_PATH}/user_tags.csv')
+    tags = [eval(s) for s in user_tags['user_tag_list']]
+    encoded_tags = MultiLabelBinarizer().fit_transform(tags)
+
+    user_tags['user_tags_encode_list'] = [' '.join(map(str,encode)) for encode in encoded_tags]
+    user_tags.to_csv(f'{FEATURE_PATH}/user_tags.csv',index=False)
+
+    # df_encoded_tags = pd.DataFrame(encoded_tags, columns=[f'tags{i}' for i in range(encoded_tags.shape[1])])
+    # df_user_tags = pd.concat((user_tags.userid, df_encoded_tags), axis=1)
+    # df_user_tags.to_csv(f'{FEATURE_PATH}/user_tags_encoded_{encoded_tags.shape[1]}.csv', index=False)
+
+def user_tags_pca(n_components=0.9):
+    user_tags_encoded = pd.read_csv(f'{FEATURE_PATH}/user_tags_encoded_336.csv')
+    data = np.array(user_tags_encoded.iloc[:,1:])
+    pca = PCA(n_components).fit(data)
+    data_pca = pca.transform(data)
+    pca_result = pd.DataFrame(data_pca, columns=[f'tags{i}' for i in range(pca.n_components_)])
+    pca_result = pd.concat((user_tags_encoded.userid, pca_result), axis=1)
+    pca_result.to_csv(f'{FEATURE_PATH}/use_tags_pca_{pca.n_components_}.csv',index=False)
+    # print(pca.explained_variance_ratio_)
+    # print(pca.n_components_)
+
+
 def main():
     t = time.time()
     create_dir()
@@ -386,4 +426,10 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    pass
+    # user_tags_encoding()
+    processed_feed_embed= pd.read_csv(f'{FEATURE_PATH}/feed_embed.csv')
+
+    feed_embed_pac(processed_feed_embed,n_components=0.8)
+    # main()
+    user_tags_pca(n_components=0.8)

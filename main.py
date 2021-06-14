@@ -9,6 +9,11 @@ import argparse
 from config import *
 
 
+def data_loader(train_path, test_path):
+    train, test = [], []
+    return train, test
+
+
 def train(self, model):
     """
     在过去13天数据上训练
@@ -29,12 +34,15 @@ def predict(self):
     """
     pass
 
-
 if __name__ == '__main__':
-    pass
-    # TODO 参数化
-    # parser = argparse.ArgumentParser()
-    # opt = parser.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--phase', type=str, default='train')
+    parser.add_argument('--model', type=str, default='deepfm')
+    parser.add_argument('-b', type=int, help='batch size', default=512)
+    parser.add_argument('--epoch', type=int, help='batch size', default=1)
+    args = parser.parse_args()
+
+
 
 
 
