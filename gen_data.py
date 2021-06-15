@@ -14,7 +14,6 @@ import os
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MultiLabelBinarizer
 
-
 def create_dir():
     """
     创建所需要的目录
@@ -22,11 +21,10 @@ def create_dir():
     if not os.path.exists(ROOT_PATH):
         print('Create dir: %s' % ROOT_PATH)
         os.mkdir(ROOT_PATH)
-    for need_dir in [FEATURE_PATH, MODEL_PATH, SUBMIT_PATH]:
+    for need_dir in [FEATURE_PATH, MODEL_PATH, SUBMIT_PATH, EVALUATE_PATH]:
         if not os.path.exists(need_dir):
             print('Create dir: %s' % need_dir)
             os.mkdir(need_dir)
-
 
 def check_file():
     """
@@ -430,7 +428,7 @@ def make_sample(userDataDF, feedDataDF):
     filename = FEATURE_PATH + "/total_feats.csv"
     print('total feature file save to: %s' % filename)
 
-    totalFeatDF.to_csv(filename)
+    #totalFeatDF.to_csv(filename)
     return userStaticDF, feedStaticDF, totalFeatDF
 
 def make_evaluate(totalFeatDF):
@@ -514,8 +512,7 @@ def user_tags_pca(n_components=0.9):
     # print(pca.explained_variance_ratio_)
     # print(pca.n_components_)
 
-
-def main():
+def generate_data():
     t = time.time()
     create_dir()
     flag, not_exists_file = check_file()
@@ -527,9 +524,9 @@ def main():
     userDataDF, feedDataDF, testDataDF = loadFile()
 
     # user feed tag and keyword process
-    feedKeywordTagDF, userKeywordTagDF = make_keyword_tag(userDataDF, feedDataDF)
-    print("feedKeyWordTagDF:\n", feedKeywordTagDF)
-    print("userKeywordTagDF:\n", userKeywordTagDF)
+    # feedKeywordTagDF, userKeywordTagDF = make_keyword_tag(userDataDF, feedDataDF)
+    # print("feedKeyWordTagDF:\n", feedKeywordTagDF)
+    # print("userKeywordTagDF:\n", userKeywordTagDF)
 
     # drop unnecessary features
     feedDataDF.drop(columns=FEED_DROP_COLUMNS, inplace=True)
@@ -541,7 +538,7 @@ def main():
     print("totalFeatDF:\n", totalFeatDF)
 
     # negative sampling
-    negative_sampling(totalFeatDF)
+    # negative_sampling(totalFeatDF)
 
     # make evaluation samples
     evaluateDF = make_evaluate(totalFeatDF)
@@ -553,10 +550,10 @@ def main():
     print('Time cost: %.2f s' % (time.time() - t))
 
 if __name__ == '__main__':
-    pass
-    # user_tags_encoding()
-    processed_feed_embed= pd.read_csv(f'{FEATURE_PATH}/feed_embed.csv')
+    generate_data()
 
-    feed_embed_pac(processed_feed_embed,n_components=0.8)
-    # main()
-    user_tags_pca(n_components=0.8)
+    # user_tags_encoding()
+    # processed_feed_embed= pd.read_csv(f'{FEATURE_PATH}/feed_embed.csv')
+
+    # feed_embed_pac(processed_feed_embed,n_components=0.8)
+    # user_tags_pca(n_components=0.8)
