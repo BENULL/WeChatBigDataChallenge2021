@@ -8,6 +8,7 @@ from config import *
 from sklearn.metrics import roc_auc_score
 from collections import defaultdict
 from lightgbm.sklearn import LGBMClassifier
+from config import *
 
 pd.set_option('display.max_columns', None)
 
@@ -88,8 +89,8 @@ train = pd.read_csv(USER_ACTION)
 print(train.shape)
 
 # 计算了个均值，感觉没啥用
-for y in y_list:
-    print(y, train[y].mean())
+# for y in y_list:
+#     print(y, train[y].mean())
 
 ## 读取测试集
 test = pd.read_csv(TEST_FILE)
@@ -100,7 +101,7 @@ print(test.shape)
 
 ## 合并处理
 df = pd.concat([train, test], axis=0, ignore_index=True)
-print(df.head(3))
+# print(df.head(3))
 
 ## 读取视频信息表
 feed_info = pd.read_csv(FEED_INFO)
@@ -109,6 +110,12 @@ feed_info = pd.read_csv(FEED_INFO)
 feed_info = feed_info[['feedid', 'authorid', 'videoplayseconds']]
 
 df = df.merge(feed_info, on='feedid', how='left')
+
+feed_embed = pd.read_csv(f'{FEATURE_PATH}/feed_embed_pca_168.csv')  # _pca_32
+user_tags = pd.read_csv(f'{FEATURE_PATH}/use_tags_pca_74.csv')  # 336
+
+df = df.merge(feed_embed, on='feedid', how='left')
+df = df.merge(user_tags, on='userid', how='left')
 
 ## 视频时长是秒，转换成毫秒，才能与play、stay做运算
 df['videoplayseconds'] *= 1000
@@ -233,29 +240,29 @@ print(uauc_list)
 print(weighted_uauc)
 
 ##################### 全量训练 #####################
-r_dict = dict(zip(y_list[:4], r_list))
-
-for y in y_list[:4]:
-    print('=========', y, '=========')
-    t = time.time()
-    clf = LGBMClassifier(
-        learning_rate=0.05,
-        n_estimators=r_dict[y],
-        num_leaves=63,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=2021
-    )
-
-    clf.fit(
-        train[cols], train[y],
-        eval_set=[(train[cols], train[y])],
-        early_stopping_rounds=r_dict[y],
-        verbose=100
-    )
-
-    test[y] = clf.predict_proba(test[cols])[:, 1]
-
-    print('runtime: {}\n'.format(time.time() - t))
-
-test[['userid', 'feedid'] + y_list[:4]].to_csv('sub_%.6f_%.6f_%.6f_%.6f_%.6f.csv' % (weighted_uauc, uauc_list[0], uauc_list[1], uauc_list[2], uauc_list[3]), index=False)
+# r_dict = dict(zip(y_list[:4], r_list))
+#
+# for y in y_list[:4]:
+#     print('=========', y, '=========')
+#     t = time.time()
+#     clf = LGBMClassifier(
+#         learning_rate=0.05,
+#         n_estimators=r_dict[y],
+#         num_leaves=63,
+#         subsample=0.8,
+#         colsample_bytree=0.8,
+#         random_state=2021
+#     )
+#
+#     clf.fit(
+#         train[cols], train[y],
+#         eval_set=[(train[cols], train[y])],
+#         early_stopping_rounds=r_dict[y],
+#         verbose=100
+#     )
+#
+#     test[y] = clf.predict_proba(test[cols])[:, 1]
+#
+#     print('runtime: {}\n'.format(time.time() - t))
+#
+# test[['userid', 'feedid'] + y_list[:4]].to_csv('sub_%.6f_%.6f_%.6f_%.6f_%.6f.csv' % (weighted_uauc, uauc_list[0], uauc_list[1], uauc_list[2], uauc_list[3]), index=False)
