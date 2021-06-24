@@ -88,10 +88,6 @@ max_day = 15
 train = pd.read_csv(USER_ACTION)
 print(train.shape)
 
-# 计算了个均值，感觉没啥用
-# for y in y_list:
-#     print(y, train[y].mean())
-
 ## 读取测试集
 test = pd.read_csv(TEST_FILE)
 
@@ -111,8 +107,8 @@ feed_info = feed_info[['feedid', 'authorid', 'videoplayseconds']]
 
 df = df.merge(feed_info, on='feedid', how='left')
 
-feed_embed = pd.read_csv(f'{FEATURE_PATH}/feed_embed_pca_168.csv')  # _pca_32
-user_tags = pd.read_csv(f'{FEATURE_PATH}/use_tags_pca_74.csv')  # 336
+feed_embed = pd.read_csv(f'{FEATURE_PATH}/feed_embed_pca_168.csv')
+user_tags = pd.read_csv(f'{FEATURE_PATH}/use_tags_pca_74.csv')
 
 df = df.merge(feed_embed, on='feedid', how='left')
 df = df.merge(user_tags, on='userid', how='left')
@@ -189,8 +185,8 @@ df['videoplayseconds_in_authorid_mean'] = df.groupby('authorid')['videoplaysecon
 df['feedid_in_authorid_nunique'] = df.groupby('authorid')['feedid'].transform('nunique')
 
 ## 内存够用的不需要做这一步
-# df = reduce_mem(df, [f for f in df.columns if f not in ['date_'] + play_cols + y_list])
 
+df = reduce_mem(df, [f for f in df.columns if f not in ['date_'] + play_cols + y_list])
 train = df[~df['read_comment'].isna()].reset_index(drop=True)
 test = df[df['read_comment'].isna()].reset_index(drop=True)
 
@@ -240,29 +236,29 @@ print(uauc_list)
 print(weighted_uauc)
 
 ##################### 全量训练 #####################
-# r_dict = dict(zip(y_list[:4], r_list))
-#
-# for y in y_list[:4]:
-#     print('=========', y, '=========')
-#     t = time.time()
-#     clf = LGBMClassifier(
-#         learning_rate=0.05,
-#         n_estimators=r_dict[y],
-#         num_leaves=63,
-#         subsample=0.8,
-#         colsample_bytree=0.8,
-#         random_state=2021
-#     )
-#
-#     clf.fit(
-#         train[cols], train[y],
-#         eval_set=[(train[cols], train[y])],
-#         early_stopping_rounds=r_dict[y],
-#         verbose=100
-#     )
-#
-#     test[y] = clf.predict_proba(test[cols])[:, 1]
-#
-#     print('runtime: {}\n'.format(time.time() - t))
-#
-# test[['userid', 'feedid'] + y_list[:4]].to_csv('sub_%.6f_%.6f_%.6f_%.6f_%.6f.csv' % (weighted_uauc, uauc_list[0], uauc_list[1], uauc_list[2], uauc_list[3]), index=False)
+r_dict = dict(zip(y_list[:4], r_list))
+
+for y in y_list[:4]:
+    print('=========', y, '=========')
+    t = time.time()
+    clf = LGBMClassifier(
+        learning_rate=0.05,
+        n_estimators=r_dict[y],
+        num_leaves=63,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=2021
+    )
+
+    clf.fit(
+        train[cols], train[y],
+        eval_set=[(train[cols], train[y])],
+        early_stopping_rounds=r_dict[y],
+        verbose=100
+    )
+
+    test[y] = clf.predict_proba(test[cols])[:, 1]
+
+    print('runtime: {}\n'.format(time.time() - t))
+
+test[['userid', 'feedid'] + y_list[:4]].to_csv('sub_%.6f_%.6f_%.6f_%.6f_%.6f.csv' % (weighted_uauc, uauc_list[0], uauc_list[1], uauc_list[2], uauc_list[3]), index=False)
