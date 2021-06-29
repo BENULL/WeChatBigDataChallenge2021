@@ -89,7 +89,7 @@ train = pd.read_csv(USER_ACTION)
 print(train.shape)
 
 ## 读取测试集
-test = pd.read_csv(TEST_FILE)
+test = pd.read_csv(SUBMIT_B)
 
 # 拼接上date字段
 test['date_'] = max_day
