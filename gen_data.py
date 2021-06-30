@@ -550,10 +550,10 @@ def generate_data():
     print('Time cost: %.2f s' % (time.time() - t))
 
 if __name__ == '__main__':
-    generate_data()
+    # generate_data()
 
     # user_tags_encoding()
-    # processed_feed_embed= pd.read_csv(f'{FEATURE_PATH}/feed_embed.csv')
+    processed_feed_embed= pd.read_csv(f'{FEATURE_PATH}/feed_embed.csv')
 
-    # feed_embed_pac(processed_feed_embed,n_components=0.8)
+    feed_embed_pac(processed_feed_embed,n_components=64)
     # user_tags_pca(n_components=0.8)

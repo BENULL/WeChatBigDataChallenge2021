@@ -7,7 +7,7 @@
 """
 
 # 存储数据的根目录
-ROOT_PATH = "/root/WeChatBigData/data/"
+ROOT_PATH = "/root/WeChatBigData/data"
 
 # 比赛数据集路径
 DATASET_PATH = ROOT_PATH + "/wechat_algo_data1"
@@ -16,6 +16,7 @@ DATASET_PATH = ROOT_PATH + "/wechat_algo_data1"
 USER_ACTION = DATASET_PATH + "/user_action.csv"
 FEED_INFO = DATASET_PATH + "/feed_info.csv"
 TEST_FILE = DATASET_PATH + "/test_a.csv"
+SUBMIT_B = DATASET_PATH + "/test_b.csv"
 FEED_EMBEDDINGS = DATASET_PATH + "/feed_embeddings.csv"
 
 # 测试集
@@ -43,7 +44,7 @@ TEST_COLUMNS = ["userid","feedid","device"]
 FEED_EMBEDDINGS_COLUMNS = ["feedid","feed_embedding"]
 
 # 初赛待预测行为列表
-ACTION_LIST = ["read_comment", "like", "click_avatar", "forward"]
+ACTION_LIST = ["read_comment", "like", "click_avatar", "forward", ]
 # 复赛待预测行为列表
 # ACTION_LIST = ["read_comment", "like", "click_avatar",  "forward", "comment", "follow", "favorite"]
 
@@ -51,8 +52,8 @@ ACTION_LIST = ["read_comment", "like", "click_avatar", "forward"]
 ACTION_DAY_NUM = {"read_comment": 7, "like": 7, "click_avatar": 7, "forward": 7, "comment": 7, "follow": 7, "favorite": 7}
 
 # 负样本下采样比例((下采样后负样本数/原负样本数)) TODO 下采样参数测试
-ACTION_SAMPLE_RATE = {"read_comment": 0.2, "like": 0.2, "click_avatar": 0.2, "forward": 0.2,
-                      "comment": 0.2, "follow": 0.2, "favorite": 0.2}
+# ACTION_SAMPLE_RATE = {"read_comment": 0.2, "like": 0.2, "click_avatar": 0.2, "forward": 0.2,
+#                       "comment": 0.2, "follow": 0.2, "favorite": 0.2}
 
 # 各个阶段数据集的设置的最后一天
 STAGE_END_DAY = {"train": 13, "evaluate": 14, "submit": 14}

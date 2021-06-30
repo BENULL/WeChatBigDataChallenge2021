@@ -7,13 +7,13 @@
 """
 import pandas as pd
 import os
-import lightgbm
+import Lightgbm
 from config import *
 from evaluation import uAUC, compute_weighted_score
 from sklearn.preprocessing import LabelEncoder
 import sys
 
-ONE_HOT_FEATURE = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id', 'bgm_singer_id', 'userid', 'device']
+ONE_HOT_FEATURE = ['feedid', 'authorid', 'bgm_song_id', 'bgm_singer_id', 'userid', 'device']
 
 
 class LGB:
@@ -31,13 +31,13 @@ class LGB:
             'feature_fraction_seed': 1,
             'learning_rate': 0.05,
             'is_unbalance': True,  # 当训练数据是不平衡的，正负样本相差悬殊的时候，可以将这个属性设为true,此时会自动给少的样本赋予更高的权重
-            'num_leaves': 256,  # 一般设为少于2^(max_depth) 128
+            'num_leaves': 128,  # 一般设为少于2^(max_depth) 128
             'max_depth': -1,  # 最大的树深，设为-1时表示不限制树的深度
             'min_child_samples': 15,  # 每个叶子结点最少包含的样本数量，用于正则化，避免过拟合
             'max_bin': 200,  # 设置连续特征或大量类型的离散特征的bins的数量
-            'subsample': 1,  # Subsample ratio of the training instance.
+            'subsample': 0.8,  # Subsample ratio of the training instance.
             'subsample_freq': 1,  # frequence of subsample, <=0 means no enable
-            'colsample_bytree': 0.5,  # Subsample ratio of columns when constructing each tree.
+            'colsample_bytree': 0.8,  # Subsample ratio of columns when constructing each tree.
             'min_child_weight': 0,  # Minimum sum of instance weight(hessian) needed in a child(leaf)
             'subsample_for_bin': 200000,  # Number of samples for constructing bin
             'min_split_gain': 0,  # lambda_l1, lambda_l2 and min_gain_to_split to regularization
@@ -49,10 +49,23 @@ class LGB:
         }
         self.stage = stage
         self.action = action
-        self.select_frts = ['userid', 'feedid', 'device', 'authorid', 'bgm_song_id', 'bgm_singer_id']
+        self.select_frts = ['userid', 'feedid', 'authorid', 'bgm_song_id', 'bgm_singer_id', 'videoplayseconds','device']
+                            # 'device', 'user_action_cnt', 'user_feed_cnt', 'user_play_avg',
+                            # 'user_stay_avg', 'user_read_comment_sum', 'user_comment_sum',
+                            # 'user_like_sum', 'user_click_avatar_sum', 'user_forward_sum',
+                            # 'user_follow_sum', 'user_favorite_sum', 'user_read_comment_avg',
+                            # 'user_comment_avg', 'user_like_avg', 'user_click_avatar_avg',
+                            # 'user_forward_avg', 'user_follow_avg', 'user_favorite_avg',
+                            # 'feed_expo_cnt', 'feed_user_cnt', 'feed_play_avg', 'feed_stay_avg',
+                            # 'feed_read_comment_sum', 'feed_comment_sum', 'feed_like_sum',
+                            # 'feed_click_avatar_sum', 'feed_forward_sum', 'feed_follow_sum',
+                            # 'feed_favorite_sum', 'feed_read_comment_avg', 'feed_comment_avg',
+                            # 'feed_like_avg', 'feed_click_avatar_avg', 'feed_forward_avg',
+                            # 'feed_follow_avg', 'feed_favorite_avg', 'feed_play_rate','feed_stay_rate']
 
         # feed embedding by PCA
-        self.select_frts += [f'embed{i}' for i in range(32)]
+        # self.select_frts += [f'embed{i}' for i in range(168)]
+        # self.select_frts += [f'tags{i}' for i in range(74)]
 
     def process_data(self, train_path, test_path):
         df_train = pd.read_csv(train_path)
@@ -60,20 +73,19 @@ class LGB:
         df = pd.concat((df_train, df_test)).reset_index(drop=True)
         for feature in ONE_HOT_FEATURE:
             df[feature] = LabelEncoder().fit_transform(df[feature].apply(str))
-        df_feed = pd.read_csv(f'{FEATURE_PATH}/feed_embed_pca_32.csv')
-        df = df.merge(df_feed)
+        df_feed = pd.read_csv(f'{FEATURE_PATH}/feed_embed_pca_168.csv')
+        # df = df.merge(df_feed)
 
-        # ONE_HOT_FEATURE = ['feedid', 'authorid', 'videoplayseconds', 'bgm_song_id',
-        #                    'bgm_singer_id', 'userid', 'device']
-        # for col in ['userid', 'feedid', 'device', 'authorid', 'bgm_song_id', 'bgm_singer_id']:
-        #     df[col] = LabelEncoder().fit_transform(df[col].apply(str))
+        # df_tags = pd.read_csv(f'{FEATURE_PATH}/use_tags_pca_74.csv')
+        # df = df.merge(df_tags)
+
         train = df.iloc[:df_train.shape[0]].reset_index(drop=True)
         test = df.iloc[df_train.shape[0]:].reset_index(drop=True)
         return train, test
 
     def train_test(self):
         # 读取训练集数据
-        train_path = f'{FEATURE_PATH}/train_data_for_{self.action}.csv'
+        train_path = f'{FEATURE_PATH}/total_feats_{self.action}.csv'
         test_path = f'{FEATURE_PATH}/test_data.csv'
 
         df_train, df_test = self.process_data(train_path, test_path)
@@ -87,9 +99,9 @@ class LGB:
         train_x = df_train[self.select_frts]
         train_y = df_train[self.action]
 
-        train_matrix = lightgbm.Dataset(train_x, label=train_y)
+        train_matrix = Lightgbm.Dataset(train_x, label=train_y)
 
-        self.model = lightgbm.train(self.params, train_matrix, num_boost_round=200)
+        self.model = Lightgbm.train(self.params, train_matrix, num_boost_round=200)
 
         print("\n".join(
             ("%s: %.2f" % x) for x in list(sorted(zip(list(train_x.columns), self.model.feature_importance("gain")),

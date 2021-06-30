@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
     t = time.time()
     label_data = open('./data/evaluate/evaluate_all_13.csv', 'r')
-    result_data = open('./data/submit/NEW_DeepFM_1623601430.csv', 'r')
+    result_data = open('./data/submit/DeepFM_3fold_result_1625018131.csv', 'r')
     res = score(result_data, label_data, mode='初赛')
     print('Time cost: %.2f s' % (time.time() - t))
 
