@@ -7,7 +7,7 @@
 """
 import pandas as pd
 import os
-import Lightgbm
+import lightgbm
 from config import *
 from evaluation import uAUC, compute_weighted_score
 from sklearn.preprocessing import LabelEncoder
